@@ -7,22 +7,22 @@ let package = Package(
     products: [
         .library(
             name: "CapacitorPedometer",
-            targets: ["PedometerPluginPlugin"])
+            targets: ["PedometerPlugin"])
     ],
     dependencies: [
         .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", from: "7.0.0")
     ],
     targets: [
         .target(
-            name: "PedometerPluginPlugin",
+            name: "PedometerPlugin",
             dependencies: [
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
                 .product(name: "Cordova", package: "capacitor-swift-pm")
             ],
-            path: "ios/Sources/PedometerPluginPlugin"),
+            path: "ios/Sources/PedometerPlugin"),
         .testTarget(
-            name: "PedometerPluginPluginTests",
-            dependencies: ["PedometerPluginPlugin"],
-            path: "ios/Tests/PedometerPluginPluginTests")
+            name: "PedometerPluginTests",
+            dependencies: ["PedometerPlugin"],
+            path: "ios/Tests/PedometerPluginTests")
     ]
 )
