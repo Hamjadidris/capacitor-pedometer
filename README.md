@@ -33,7 +33,7 @@ npx cap sync
 checkAvailability() => Promise<AvailabilityResult>
 ```
 
-Checks if Health API is available. If available will return `AVAILABLE` otherwise it will return UNAVAILABLE or NOTINSTALLED.
+Checks if Health API is available. If available will return `AVAILABLE` otherwise it will return `UNAVAILABLE` or `NOTINSTALLED` if user is on android and hasn't intalled Health Connect.
 
 **Returns:** <code>Promise&lt;<a href="#availabilityresult">AvailabilityResult</a>&gt;</code>
 
@@ -141,16 +141,16 @@ Query aggregated activity data
 
 #### QueryActivityRequest
 
-| Prop                   | Type                                          |
-| ---------------------- | --------------------------------------------- |
-| **`startDate`**        | <code>string</code>                           |
-| **`endDate`**          | <code>string</code>                           |
-| **`activityType`**     | <code><a href="#activity">Activity</a></code> |
-| **`filterType`**       | <code><a href="#filter">Filter</a></code>     |
-| **`dataOriginFilter`** | <code>string[]</code>                         |
-| **`limit`**            | <code>number</code>                           |
-| **`ascending`**        | <code>boolean</code>                          |
-| **`pageToken`**        | <code>string</code>                           |
+| Prop                   | Type                                          | Description                                                                                                                                                      | Default                |
+| ---------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| **`startDate`**        | <code>string</code>                           |                                                                                                                                                                  |                        |
+| **`endDate`**          | <code>string</code>                           |                                                                                                                                                                  |                        |
+| **`activityType`**     | <code><a href="#activity">Activity</a></code> |                                                                                                                                                                  |                        |
+| **`filterType`**       | <code><a href="#filter">Filter</a></code>     | If `between` is choose then startDate and endDate are required. If `after` is choose then startDate is required. If `before` is choose then endDate is required. | <code>"between"</code> |
+| **`dataOriginFilter`** | <code>string[]</code>                         | Only used on Android.                                                                                                                                            |                        |
+| **`limit`**            | <code>number</code>                           |                                                                                                                                                                  |                        |
+| **`ascending`**        | <code>boolean</code>                          |                                                                                                                                                                  |                        |
+| **`pageToken`**        | <code>string</code>                           | Only used on Android.                                                                                                                                            |                        |
 
 
 #### QueryAggregatedActivityResponse
@@ -195,7 +195,7 @@ Query aggregated activity data
 
 #### QueryActivity
 
-<code>{ id: string; startDate: string; endDate: string; value: number; sourceName: string; sourceDevice?: <a href="#device">Device</a>; }</code>
+<code>{ id: string; startDate: string; endDate: string; value: number; sourceName?: string; sourceDevice?: <a href="#device">Device</a>; }</code>
 
 
 #### Device

@@ -114,12 +114,12 @@ class StepSensor : AppCompatActivity(), SensorEventListener {
                 useCentescriptLog("local recording client successfully subscribed!")
                 activityResult(RESULT_CANCELED, "Recording client subscribed")
                 val endTime = LocalDateTime.now().atZone(ZoneId.systemDefault())
-                val startTime = endTime.minus(Duration.ofMinutes(15))
+                val startTime = endTime.minus(Duration.ofMinutes(5))
 
                 val readRequest =
                     LocalDataReadRequest.Builder()
                         .aggregate(LocalDataType.TYPE_STEP_COUNT_DELTA)
-                        .bucketByTime(15, TimeUnit.MINUTES)
+                        .bucketByTime(5, TimeUnit.MINUTES)
                         .setTimeRange(
                             startTime.toEpochSecond(),
                             endTime.toEpochSecond(),

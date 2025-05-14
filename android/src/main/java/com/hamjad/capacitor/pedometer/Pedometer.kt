@@ -396,7 +396,7 @@ class Pedometer : Plugin() {
             "before" -> TimeRangeFilter.before(endDateTime)
             "after" -> TimeRangeFilter.after(startDateTime)
             "between" -> TimeRangeFilter.between(startDateTime, endDateTime)
-            else -> throw IllegalArgumentException("Unexpected TimeRange type: $name")
+            else -> TimeRangeFilter.between(startDateTime, endDateTime)
         }
     }
 

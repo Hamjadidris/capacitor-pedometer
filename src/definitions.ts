@@ -1,6 +1,6 @@
 export interface PedometerPlugin {
   /**
-   * Checks if Health API is available. If available will return `AVAILABLE` otherwise it will return UNAVAILABLE or NOTINSTALLED.
+   * Checks if Health API is available. If available will return `AVAILABLE` otherwise it will return `UNAVAILABLE` or `NOTINSTALLED` if user is on android and hasn't intalled Health Connect.
    *
    */
   checkAvailability(): Promise<AvailabilityResult>;
@@ -80,7 +80,7 @@ export type QueryActivity = {
   startDate: string;
   endDate: string;
   value: number;
-  sourceName: string;
+  sourceName?: string;
   sourceDevice?: Device;
 };
 
@@ -88,10 +88,23 @@ export interface QueryActivityRequest {
   startDate: string;
   endDate: string;
   activityType: Activity;
+  /**
+   * If `between` is choose then startDate and endDate are required.
+   * If `after` is choose then startDate is required.
+   * If `before` is choose then endDate is required.
+   * @default "between"
+   *
+   */
   filterType: Filter;
+  /**
+   * Only used on Android.
+   */
   dataOriginFilter?: string[];
   limit?: number;
   ascending?: boolean;
+  /**
+   * Only used on Android.
+   */
   pageToken?: string;
 }
 
