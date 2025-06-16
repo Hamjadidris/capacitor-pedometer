@@ -1,11 +1,11 @@
-# capacitor-health-pedometer
+# capacitor-pedometer
 
 A plugin to make building your fitness apps just that easier, using Android Health Connect and Sensor Manager on Android and Apple HealthKit on IOS.
 
 ## Install
 
 ```bash
-npm install capacitor-health-pedometer
+npm install capacitor-pedometer
 npx cap sync
 ```
 
@@ -102,16 +102,16 @@ Because Health Connect acts more as central store for health and fitness data ra
 
 <docgen-index>
 
-* [`checkAvailability()`](#checkavailability)
-* [`requestPermission()`](#requestpermission)
-* [`checkPermission()`](#checkpermission)
-* [`useStepSensor()`](#usestepsensor)
-* [`queryActivity(...)`](#queryactivity)
-* [`queryAggregatedActivity(...)`](#queryaggregatedactivity)
-* [`getChangesToken(...)`](#getchangestoken)
-* [`getChanges(...)`](#getchanges)
-* [Interfaces](#interfaces)
-* [Type Aliases](#type-aliases)
+- [`checkAvailability()`](#checkavailability)
+- [`requestPermission()`](#requestpermission)
+- [`checkPermission()`](#checkpermission)
+- [`useStepSensor()`](#usestepsensor)
+- [`queryActivity(...)`](#queryactivity)
+- [`queryAggregatedActivity(...)`](#queryaggregatedactivity)
+- [`getChangesToken(...)`](#getchangestoken)
+- [`getChanges(...)`](#getchanges)
+- [Interfaces](#interfaces)
+- [Type Aliases](#type-aliases)
 
 </docgen-index>
 
@@ -128,8 +128,7 @@ Checks if Android Health Connect or Apple HealthKit is available. If available w
 
 **Returns:** <code>Promise&lt;<a href="#availabilityresult">AvailabilityResult</a>&gt;</code>
 
---------------------
-
+---
 
 ### requestPermission()
 
@@ -141,8 +140,7 @@ Requests permissions for steps, distance and calories
 
 **Returns:** <code>Promise&lt;<a href="#permissionresponse">PermissionResponse</a>&gt;</code>
 
---------------------
-
+---
 
 ### checkPermission()
 
@@ -154,8 +152,7 @@ Check permissions that have been previously requested.
 
 **Returns:** <code>Promise&lt;<a href="#permissionresponse">PermissionResponse</a>&gt;</code>
 
---------------------
-
+---
 
 ### useStepSensor()
 
@@ -167,8 +164,7 @@ Use Android's Sensor API to manually count, record and store steps in Health Con
 
 **Returns:** <code>Promise&lt;<a href="#sensorresponse">SensorResponse</a>&gt;</code>
 
---------------------
-
+---
 
 ### queryActivity(...)
 
@@ -184,8 +180,7 @@ Query activity data
 
 **Returns:** <code>Promise&lt;<a href="#queryactivityresponse">QueryActivityResponse</a>&gt;</code>
 
---------------------
-
+---
 
 ### queryAggregatedActivity(...)
 
@@ -201,8 +196,7 @@ Query aggregated activity data
 
 **Returns:** <code>Promise&lt;<a href="#queryaggregatedactivityresponse">QueryAggregatedActivityResponse</a>&gt;</code>
 
---------------------
-
+---
 
 ### getChangesToken(...)
 
@@ -220,8 +214,7 @@ Even though you can get a token for multiple activity types. Android recommends 
 
 **Returns:** <code>Promise&lt;<a href="#changestokenresult">ChangesTokenResult</a>&gt;</code>
 
---------------------
-
+---
 
 ### getChanges(...)
 
@@ -238,11 +231,9 @@ Get Health Connect changes
 
 **Returns:** <code>Promise&lt;<a href="#changesresult">ChangesResult</a>&gt;</code>
 
---------------------
-
+---
 
 ### Interfaces
-
 
 #### PermissionResponse
 
@@ -251,13 +242,11 @@ Get Health Connect changes
 | **`allGranted`**  | <code>boolean</code>                                                        |
 | **`permissions`** | <code><a href="#mappedpermissionrecords">mappedPermissionRecords</a></code> |
 
-
 #### SensorResponse
 
 | Prop         | Type             |
 | ------------ | ---------------- |
 | **`result`** | <code>any</code> |
-
 
 #### QueryActivityResponse
 
@@ -265,7 +254,6 @@ Get Health Connect changes
 | ---------------- | ---------------------------- |
 | **`activities`** | <code>QueryActivity[]</code> |
 | **`pageToken`**  | <code>string</code>          |
-
 
 #### QueryActivityRequest
 
@@ -280,13 +268,11 @@ Get Health Connect changes
 | **`ascending`**        | <code>boolean</code>                          |                                                                                                                                                                  |                        |
 | **`pageToken`**        | <code>string</code>                           | Only used on Android.                                                                                                                                            |                        |
 
-
 #### QueryAggregatedActivityResponse
 
 | Prop                 | Type                            |
 | -------------------- | ------------------------------- |
 | **`aggregatedData`** | <code>AggregatedSample[]</code> |
-
 
 #### AggregatedSample
 
@@ -297,7 +283,6 @@ Get Health Connect changes
 | **`value`**       | <code>number</code>   |
 | **`dataOrigins`** | <code>string[]</code> |
 
-
 #### QueryAggregatedActivityRequest
 
 | Prop               | Type                                          |
@@ -307,13 +292,11 @@ Get Health Connect changes
 | **`activityType`** | <code><a href="#activity">Activity</a></code> |
 | **`bucket`**       | <code><a href="#bucket">Bucket</a></code>     |
 
-
 #### ChangesTokenResult
 
 | Prop        | Type                |
 | ----------- | ------------------- |
 | **`token`** | <code>string</code> |
-
 
 #### ChangesResult
 
@@ -322,7 +305,6 @@ Get Health Connect changes
 | **`changes`**   | <code>Changes[]</code> |
 | **`nextToken`** | <code>string</code>    |
 
-
 #### Changes
 
 | Prop         | Type                              |
@@ -330,39 +312,33 @@ Get Health Connect changes
 | **`type`**   | <code>'upsert' \| 'delete'</code> |
 | **`record`** | <code>QueryActivity[]</code>      |
 
-
 ### Type Aliases
-
 
 #### AvailabilityResult
 
 <code>{ result: 'AVAILABLE' | 'UNAVAILABLE' | 'NOTINSTALLED'; }</code>
 
-
 #### mappedPermissionRecords
 
 <code>{ [PermissionRecordKey in 'readSteps' | 'writeSteps' | 'distance' | 'calories']: boolean; }</code>
-
 
 #### QueryActivity
 
 <code>{ id: string; startDate: string; endDate: string; value: number; dataOrigin?: string; sourceDevice?: <a href="#device">Device</a>; }</code>
 
-
 #### Device
 
-<code>'UNKNOWN' | 'WATCH' | 'PHONE' | 'SCALE' | 'RING' | 'HEAD_MOUNTED' | 'FITNESS_BAND' | 'CHEST_STRAP' | 'SMART_DISPLAY'</code>
-
+<code>
+  'UNKNOWN' | 'WATCH' | 'PHONE' | 'SCALE' | 'RING' | 'HEAD_MOUNTED' | 'FITNESS_BAND' | 'CHEST_STRAP' | 'SMART_DISPLAY'
+</code>
 
 #### Activity
 
 <code>'steps' | 'distance' | 'calories'</code>
 
-
 #### Filter
 
 <code>'between' | 'after' | 'before'</code>
-
 
 #### Bucket
 

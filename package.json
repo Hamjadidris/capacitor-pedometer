@@ -1,5 +1,5 @@
 {
-  "name": "capacitor-health-pedometer",
+  "name": "capacitor-pedometer",
   "version": "0.0.1",
   "description": "A plugin to make building your fitness apps just that easier, using Android Health Connect and Sensor Manager on Android and Apple HealthKit on IOS",
   "main": "dist/plugin.cjs.js",
@@ -13,16 +13,16 @@
     "ios/Sources",
     "ios/Tests",
     "Package.swift",
-    "CapacitorHealthPedometer.podspec"
+    "CapacitorPedometer.podspec"
   ],
   "author": "Hamjad Idris",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Hamjadidris/capacitor-health-pedometer.git.git"
+    "url": "git+https://github.com/Hamjadidris/capacitor-pedometer.git.git"
   },
   "bugs": {
-    "url": "https://github.com/Hamjadidris/capacitor-health-pedometer.git/issues"
+    "url": "https://github.com/Hamjadidris/capacitor-pedometer.git/issues"
   },
   "keywords": [
     "capacitor",
@@ -31,7 +31,7 @@
   ],
   "scripts": {
     "verify": "npm run verify:ios && npm run verify:android && npm run verify:web",
-    "verify:ios": "xcodebuild -scheme CapacitorHealthPedometer -destination generic/platform=iOS",
+    "verify:ios": "xcodebuild -scheme CapacitorPedometer -destination generic/platform=iOS",
     "verify:android": "cd android && ./gradlew clean build test && cd ..",
     "verify:web": "npm run build",
     "lint": "npm run eslint && npm run prettier -- --check && npm run swiftlint -- lint",

@@ -2,11 +2,11 @@
 import PackageDescription
 
 let package = Package(
-    name: "CapacitorHealthPedometer",
+    name: "CapacitorPedometer",
     platforms: [.iOS(.v14)],
     products: [
         .library(
-            name: "CapacitorHealthPedometer",
+            name: "CapacitorPedometer",
             targets: ["PedometerPlugin"])
     ],
     dependencies: [
