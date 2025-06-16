@@ -4,7 +4,7 @@ export default {
     {
       file: 'dist/plugin.js',
       format: 'iife',
-      name: 'capacitorPedometerPlugin',
+      name: 'CapacitorHealthPedometerPlugin',
       globals: {
         '@capacitor/core': 'capacitorExports',
       },
