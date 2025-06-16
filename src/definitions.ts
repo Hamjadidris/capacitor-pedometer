@@ -1,6 +1,6 @@
 export interface PedometerPlugin {
   /**
-   * Checks if Health API is available. If available will return `AVAILABLE` otherwise it will return `UNAVAILABLE` or `NOTINSTALLED` if user is on android and hasn't intalled Health Connect.
+   * Checks if Android Health Connect or Apple HealthKit is available. If available will return `AVAILABLE`, otherwise it will return `UNAVAILABLE` or `NOTINSTALLED`.
    *
    */
   checkAvailability(): Promise<AvailabilityResult>;
@@ -21,7 +21,7 @@ export interface PedometerPlugin {
 
   /**
    *
-   * Use Android's Sensor API to manually count, record and store steps in Health connect. Requires `ACTIVITY_RECOGNITION` permission. Only available on Android.
+   * Use Android's Sensor API to manually count, record and store steps in Health Connect. Requires `ACTIVITY_RECOGNITION` permission. Only available on Android.
    *
    */
   useStepSensor(): Promise<SensorResponse>;
@@ -37,6 +37,21 @@ export interface PedometerPlugin {
    * @param requestOptions
    */
   queryAggregatedActivity(requestOptions: QueryAggregatedActivityRequest): Promise<QueryAggregatedActivityResponse>;
+
+  /**
+   * Android only
+   * Get changes token to watch for changes in Health Connect.
+   * Even though you can get a token for multiple activity types. Android recommends getting separate tokens per activity type instead of getting them in bulk to avoid having an Exception in case one of the permissions is revoked.
+   * @param activityType
+   */
+  getChangesToken(activityType: Activity[]): Promise<ChangesTokenResult>;
+
+  /**
+   * Android only
+   * Get Health Connect changes
+   * @param token
+   */
+  getChanges(token: string): Promise<ChangesResult>;
 }
 
 export declare type AvailabilityResult = {
@@ -72,7 +87,7 @@ export interface AggregatedSample {
   startDate: string;
   endDate: string;
   value: number;
-  sourceName?: string;
+  dataOrigins?: string[];
 }
 
 export type QueryActivity = {
@@ -80,7 +95,7 @@ export type QueryActivity = {
   startDate: string;
   endDate: string;
   value: number;
-  sourceName?: string;
+  dataOrigin?: string;
   sourceDevice?: Device;
 };
 
@@ -122,4 +137,18 @@ export interface QueryAggregatedActivityRequest {
 
 export interface QueryAggregatedActivityResponse {
   aggregatedData: AggregatedSample[];
+}
+
+export interface ChangesTokenResult {
+  token: string;
+}
+
+export interface Changes {
+  type: 'upsert' | 'delete';
+  record: QueryActivity[];
+}
+
+export interface ChangesResult {
+  changes: Changes[];
+  nextToken: string;
 }

@@ -126,6 +126,8 @@ public class PedometerPlugin: CAPPlugin, CAPBridgedPlugin {
     
     func getISOStringFromDate(date: Date) -> String {
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
         formatter.timeZone = TimeZone(secondsFromGMT: TimeZone.current.secondsFromGMT())
         let isoString =  formatter.string(from: date)
@@ -212,13 +214,20 @@ public class PedometerPlugin: CAPPlugin, CAPBridgedPlugin {
                    let endDate = self.getISOStringFromDate(date: sample.endDate)
                    
                    
+                   
                    let value = self.getSampleValue(activityType: activityType, dataType: dataType, quantity: sample.quantity)
                    
+                   let source = sample.sourceRevision
+                   
+                   
+                
                 queryResult.append([
+                    "id": sample.uuid,
                     "startDate": startDate,
                     "endDate": endDate,
                     "value": value,
-                    "sourceDevice": "UNKNOWN"
+                    "dataOrigin": source.source.bundleIdentifier,
+                    "sourceDevice": source.productType ?? "UNKNOWN"
                 ])
                }
                
@@ -270,7 +279,7 @@ public class PedometerPlugin: CAPPlugin, CAPBridgedPlugin {
         
         let query = HKStatisticsCollectionQuery(quantityType: dataType,
                                                    quantitySamplePredicate: predicate,
-                                                   options: .cumulativeSum,
+                                                   options: [.cumulativeSum, .separateBySource],
                                                    anchorDate: startDate,
                                                    intervalComponents: interval)
 
@@ -290,14 +299,17 @@ public class PedometerPlugin: CAPPlugin, CAPBridgedPlugin {
                     
                     let value = self.getSampleValue(activityType: activityType, dataType: dataType, quantity: sum)
                     
-                    let sources = statistics.sources
-                    
-                    print(sources ?? "no source")
+                    var sourcesArray:Array = []
+                        
+                    statistics.sources?.forEach(){ source in
+                        sourcesArray.append(source.bundleIdentifier)
+                    }
                     
                     aggregatedSamples.append([
                         "startDate": startDate,
                         "endDate": endDate,
-                        "value": value
+                        "value": value,
+                        "dataOrigins": sourcesArray
                     ])
                 }
             }

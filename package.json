@@ -1,7 +1,7 @@
 {
   "name": "capacitor-pedometer",
   "version": "0.0.1",
-  "description": "A plugin to make building your fitness apps just that easier, using Google Health Connect on Android and Apple HealthKit on IOS",
+  "description": "A plugin to make building your fitness apps just that easier, using Android Health Connect and Sensor Manager on Android and Apple HealthKit on IOS",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",

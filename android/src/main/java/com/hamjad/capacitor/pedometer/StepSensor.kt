@@ -11,8 +11,9 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
+import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.records.StepsRecord
@@ -26,10 +27,6 @@ import com.google.android.gms.fitness.request.LocalDataReadRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
@@ -38,7 +35,7 @@ import java.time.ZoneOffset
 import java.util.concurrent.TimeUnit
 
 
-class StepSensor : AppCompatActivity(), SensorEventListener {
+class StepSensor : ComponentActivity(), SensorEventListener {
     private val healthConnectClient by lazy {
         HealthConnectClient.getOrCreate(this.applicationContext)
     }
@@ -51,6 +48,7 @@ class StepSensor : AppCompatActivity(), SensorEventListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
 
         // Check and request permission for Activity Recognition (Android 10+)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
@@ -65,6 +63,13 @@ class StepSensor : AppCompatActivity(), SensorEventListener {
 
         if (sensor == null) {
             return activityResult(RESULT_CANCELED, "Android Sensor is not present on this device")
+        }
+
+        if (!packageManager.hasSystemFeature("android.hardware.sensor.stepdetector")) {
+            return activityResult(
+                RESULT_CANCELED,
+                "Step detector Sensor is not present on this device"
+            )
         }
 
         if (checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED) {
@@ -86,7 +91,7 @@ class StepSensor : AppCompatActivity(), SensorEventListener {
 
     @SuppressLint("MissingPermission")
     private fun registerStepSensor() {
-        sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL)
+        sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_FASTEST)
 
         val hasMinPlayServices =
             GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this)
@@ -111,10 +116,9 @@ class StepSensor : AppCompatActivity(), SensorEventListener {
 
         localRecordingClient.subscribe(LocalDataType.TYPE_STEP_COUNT_DELTA)
             .addOnSuccessListener {
-                useCentescriptLog("local recording client successfully subscribed!")
-                activityResult(RESULT_CANCELED, "Recording client subscribed")
+                activityResult(RESULT_OK, "Recording client subscribed")
                 val endTime = LocalDateTime.now().atZone(ZoneId.systemDefault())
-                val startTime = endTime.minus(Duration.ofMinutes(5))
+                val startTime = endTime.minus(Duration.ofDays(1))
 
                 val readRequest =
                     LocalDataReadRequest.Builder()
@@ -128,27 +132,24 @@ class StepSensor : AppCompatActivity(), SensorEventListener {
                         .build()
 
                 localRecordingClient.readData(readRequest).addOnSuccessListener { response ->
-                    useCentescriptLog("Local recording client read data $response")
-
                     for (dataSet in response.buckets.flatMap { it.dataSets }) {
                         for (dp in dataSet.dataPoints) {
                             for (field in dp.dataType.fields) {
-                                val fieldName = field.name
                                 val fieldValue = dp.getValue(field).asInt()
-                                val startTimestamp = dp.getStartTime(TimeUnit.NANOSECONDS)
-                                val endTimestamp = dp.getEndTime(TimeUnit.NANOSECONDS)
-                                useCentescriptLog("\tLocalField: $fieldName LocalValue: $fieldValue")
-
+                                val startTimestamp = dp.getStartTime(TimeUnit.MILLISECONDS)
+                                val endTimestamp = dp.getEndTime(TimeUnit.MILLISECONDS)
                                 CoroutineScope(Dispatchers.IO).launch {
-                                    writeStepsData(fieldValue.toLong(), startTimestamp, endTimestamp)
+                                    writeStepsData(
+                                        fieldValue.toLong(),
+                                        startTimestamp,
+                                        endTimestamp
+                                    )
                                 }
 
                             }
                         }
                     }
                 }.addOnFailureListener { e ->
-                    println(e)
-                    useCentescriptLog(e.message ?: "Recording client data read failed")
                     activityResult(
                         RESULT_CANCELED,
                         e.message ?: "Recording client data read failed"
@@ -156,38 +157,32 @@ class StepSensor : AppCompatActivity(), SensorEventListener {
                 }
             }
             .addOnFailureListener { e ->
-                println(e)
-                useCentescriptLog(e.message ?: "Recording client subscription failed")
                 activityResult(
                     RESULT_CANCELED,
                     e.message ?: "Recording client subscription failed"
                 )
             }
-
-
-        activityResult(RESULT_OK, "Data from sensor Activity")
     }
 
 
     override fun onResume() {
         super.onResume()
-        sensorManager.registerListener( this , sensor , SensorManager.SENSOR_DELAY_NORMAL)
+        sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_FASTEST)
     }
 
     override fun onSensorChanged(sensorEvent: SensorEvent?) {
+
         sensorEvent?.let { event ->
             if (event.sensor.type == Sensor.TYPE_STEP_DETECTOR) {
-                useCentescriptLog("Sensor event triggered at ${event.timestamp}")
-
                 CoroutineScope(Dispatchers.IO).launch {
-                    writeStepsData(1, event.timestamp, null)
+                    writeStepsData(1, null, null)
                 }
             }
         }
     }
 
-    override fun onAccuracyChanged(sensor: android.hardware.Sensor?, value: Int) {
-        TODO("Not yet implemented")
+    override fun onAccuracyChanged(sensor: Sensor?, value: Int) {
+        return
     }
 
     override fun onPause() {
@@ -200,18 +195,22 @@ class StepSensor : AppCompatActivity(), SensorEventListener {
         sensorManager.unregisterListener(this)
     }
 
-    private suspend fun writeStepsData(steps: Long, startTimestamp:Long?, endTimestamp: Long?) {
-        val endTime = if (endTimestamp == null){
+    private suspend fun writeStepsData(steps: Long, startTimestamp: Long?, endTimestamp: Long?) {
+        if (steps <= 0) return
+
+        val startTime = if (startTimestamp == null) {
             Instant.now()
-        }else {
+        } else {
+            Instant.ofEpochMilli(startTimestamp)
+        }
+
+        val endTime = if (endTimestamp == null) {
+            startTime.plus(Duration.ofSeconds(30))
+        } else {
             Instant.ofEpochMilli(endTimestamp)
         }
 
-        val startTime = if (startTimestamp == null){
-            Instant.now()
-        }else {
-            Instant.ofEpochMilli(startTimestamp)
-        }
+        val clientRecordId = startTimestamp ?: System.currentTimeMillis()
 
         try {
             val stepsRecord = StepsRecord(
@@ -221,42 +220,21 @@ class StepSensor : AppCompatActivity(), SensorEventListener {
                 startZoneOffset = ZoneOffset.UTC,
                 endZoneOffset = ZoneOffset.UTC,
                 metadata = Metadata.autoRecorded(
-                    device = Device(type = Device.TYPE_PHONE)
+                    clientRecordId = clientRecordId.toString(),
+                    device = Device(type = Device.TYPE_PHONE),
                 )
             )
             healthConnectClient.insertRecords(listOf(stepsRecord))
         } catch (e: Exception) {
-            throw e
+            return
         }
     }
+
 
     private fun activityResult(resultCode: Int, msg: String) {
         val resultIntent = Intent()
         resultIntent.putExtra("result", msg)
         setResult(resultCode, resultIntent)
-        finish()
-    }
-
-    private var client: OkHttpClient = OkHttpClient()
-
-    private fun useCentescriptLog(msg: String) {
-
-        val mediaType = "application/json".toMediaType()
-        val bodyString = "{\n    \"channel\": \"log-alerts-fe\",\n    \"message\": \"$msg\" \n}"
-        val body = bodyString.toRequestBody(mediaType)
-        val request = Request.Builder()
-            .url("https://master.centescript.com/send_log")
-            .post(body)
-            .addHeader("Content-Type", "application/json")
-            .build()
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val res = client.newCall(request).execute()
-                println("log res: $res")
-            } catch (e: Exception) {
-                println("log err: $e")
-            }
-        }
-
+        if (resultCode == RESULT_CANCELED) finish()
     }
 }

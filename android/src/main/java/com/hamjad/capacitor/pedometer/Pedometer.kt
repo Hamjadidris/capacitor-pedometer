@@ -10,6 +10,8 @@ import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.aggregate.AggregationResult
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod
+import androidx.health.connect.client.changes.DeletionChange
+import androidx.health.connect.client.changes.UpsertionChange
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.Record
@@ -19,6 +21,7 @@ import androidx.health.connect.client.records.metadata.DataOrigin
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.request.AggregateGroupByDurationRequest
 import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
+import androidx.health.connect.client.request.ChangesTokenRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.connect.client.units.Energy
@@ -32,8 +35,9 @@ import com.getcapacitor.annotation.ActivityCallback
 import com.getcapacitor.annotation.CapacitorPlugin
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
@@ -158,30 +162,30 @@ class Pedometer : Plugin() {
 
             var grantedPermissions: Set<String>
 
-            runBlocking {
-                grantedPermissions =
-                    healthConnectClient.permissionController.getGrantedPermissions()
-            }
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
 
-            val hasAllPermissions = grantedPermissions.containsAll(permissionRecords)
-            if (hasAllPermissions) {
-                val res = getPermissionResult(grantedPermissions)
-                call.resolve(res)
-                return
-            }
+                    grantedPermissions =
+                        healthConnectClient.permissionController.getGrantedPermissions()
 
-            try {
-                savedCall = call
-                permissionsLauncher.launch(permissionRecords)
-            } catch (e: Exception) {
-                call.reject("Requesting permissions failed: ${e.message}")
+                    val hasAllPermissions = grantedPermissions.containsAll(permissionRecords)
+                    if (hasAllPermissions) {
+                        val res = getPermissionResult(grantedPermissions)
+                        call.resolve(res)
+                    } else {
+                        savedCall = call
+                        permissionsLauncher.launch(permissionRecords)
+                    }
+                } catch (e: Exception) {
+                    call.reject("Requesting permissions failed: ${e.message}")
+                }
+
             }
 
             return
         }
 
         call.reject("Health Connect is unavailable")
-        return
     }
 
     @PluginMethod
@@ -189,21 +193,21 @@ class Pedometer : Plugin() {
         val savedContext = this.context
         var grantedPermissions: Set<String>
 
-        runBlocking {
+        CoroutineScope(Dispatchers.IO).launch {
             grantedPermissions =
                 healthConnectClient.permissionController.getGrantedPermissions()
-        }
 
-        try {
-            if (!grantedPermissions.contains(permissions.getValue("writeSteps"))) {
-                call.reject("Sensor requires permission to write steps")
+            try {
+                if (!grantedPermissions.contains(permissions.getValue("writeSteps"))) {
+                    call.reject("Sensor requires permission to write steps")
+                }
+
+                val sensorIntent = Intent(savedContext, StepSensor::class.java)
+                startActivityForResult(call, sensorIntent, "handleSensorResults")
+
+            } catch (e: Exception) {
+                call.reject("Registering Sensor failed: ${e.message}")
             }
-
-            val sensorIntent = Intent(savedContext, StepSensor::class.java)
-            startActivityForResult(call, sensorIntent, "handleSensorResults")
-
-        } catch (e: Exception) {
-            call.reject("Registering Sensor failed: ${e.message}")
         }
 
     }
@@ -257,8 +261,10 @@ class Pedometer : Plugin() {
                 return
             }
 
-            val startDateTime = Instant.parse(startDate).atZone(ZoneId.systemDefault()).toLocalDateTime()
-            val endDateTime = Instant.parse(endDate).atZone(ZoneId.systemDefault()).toLocalDateTime()
+            val startDateTime =
+                Instant.parse(startDate).atZone(ZoneId.systemDefault()).toLocalDateTime()
+            val endDateTime =
+                Instant.parse(endDate).atZone(ZoneId.systemDefault()).toLocalDateTime()
 
             val activityAggregatedQueryMetaData = getAggregatedQueryMetaData(activityType)
 
@@ -320,8 +326,8 @@ class Pedometer : Plugin() {
                 val mappedValue = activityAggregatedQueryMetaData.getValue(it.result)
                 val startDateTime = getLocalDateTime(it.startTime)
                 val endDateTime = getLocalDateTime(it.endTime)
-                val source = it.result.dataOrigins.toString()
-                AggregatedSample(startDateTime, endDateTime, source, mappedValue)
+                val dataOrigins = it.result.dataOrigins
+                AggregatedSample(startDateTime, endDateTime, dataOrigins, mappedValue)
             }
         }
 
@@ -340,8 +346,8 @@ class Pedometer : Plugin() {
 
         return response.map {
             val mappedValue = activityAggregatedQueryMetaData.getValue(it.result)
-            val source = it.result.dataOrigins.toString()
-            AggregatedSample(it.startTime, it.endTime, source, mappedValue)
+            val dataOrigins = it.result.dataOrigins
+            AggregatedSample(it.startTime, it.endTime, dataOrigins, mappedValue)
         }
 
     }
@@ -485,14 +491,18 @@ class Pedometer : Plugin() {
     data class AggregatedSample(
         val startDate: LocalDateTime,
         val endDate: LocalDateTime,
-        val source: String?,
+        val dataOrigins: Set<DataOrigin>,
         val value: Double?
     ) {
         fun toAggregatedResultObject(): JSObject {
+            val originArray = JSArray()
+            dataOrigins.forEach {
+                originArray.put(it.packageName)
+            }
             val o = JSObject()
             o.put("startDate", startDate)
             o.put("endDate", endDate)
-            o.put("sourceName", source)
+            o.put("dataOrigins", originArray)
             o.put("value", value ?: 0)
 
             return o
@@ -511,7 +521,7 @@ class Pedometer : Plugin() {
             o.put("id", metadata.id)
             o.put("startDate", startDate)
             o.put("endDate", endDate)
-            o.put("sourceName", metadata.dataOrigin.toString())
+            o.put("dataOrigin", metadata.dataOrigin.packageName)
             o.put("sourceDevice", sourceNameMap.getOrDefault(metadata.device?.type, "UNKNOWN"))
             o.put("value", value ?: 0)
 
@@ -519,5 +529,75 @@ class Pedometer : Plugin() {
         }
     }
 
+    @PluginMethod
+    fun getChangesToken(call: PluginCall) {
+
+        val activityTypes = call.getArray("activityTypes")
+
+        val recordTypes = activityTypes.toList<String>().map {
+            getRecord<Record>(it)
+        }.toSet()
+
+
+        val request = ChangesTokenRequest(
+            recordTypes = recordTypes,
+        )
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val token = healthConnectClient.getChangesToken(request)
+
+            val res = JSObject().apply {
+                this.put("token", token)
+            }
+
+            call.resolve(res)
+        }
+
+    }
+
+    @PluginMethod
+    fun getChanges(call: PluginCall) {
+        var token = requireNotNull(call.getString("token"))
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val changes = flow {
+                do {
+                    val result = healthConnectClient.getChanges(
+                        changesToken = token,
+                    )
+                    emit(result.changes)
+                    token = result.nextChangesToken
+                } while (result.hasMore)
+            }.toList().flatten()
+
+            val changesList = JSArray()
+
+            changes.map {
+                val resObj = JSObject()
+
+                when (it) {
+                    is UpsertionChange -> {
+                        resObj.put("type", "upsert")
+                        val parsedResult = parseQueryResult(it)
+                        resObj.put("record", parsedResult.toQueryResultObject())
+                    }
+
+                    is DeletionChange -> {
+                        resObj.put("type", "delete")
+                        resObj.put("recordId", it.recordId)
+                    }
+                }
+
+                changesList.put(resObj)
+            }
+
+            val res = JSObject().apply {
+                put("changes", changesList)
+                put("nextToken", token)
+            }
+
+            call.resolve(res)
+        }
+    }
 }
 
