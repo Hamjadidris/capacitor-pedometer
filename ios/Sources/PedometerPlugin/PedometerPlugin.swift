@@ -220,9 +220,8 @@ public class PedometerPlugin: CAPPlugin, CAPBridgedPlugin {
                    let source = sample.sourceRevision
                    
                    
-                
                 queryResult.append([
-                    "id": sample.uuid,
+                    "id": sample.uuid.uuidString,
                     "startDate": startDate,
                     "endDate": endDate,
                     "value": value,
