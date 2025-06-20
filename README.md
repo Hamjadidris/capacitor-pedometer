@@ -1,6 +1,6 @@
 # capacitor-pedometer
 
-A plugin to make building your fitness apps just that easier, using Android Health Connect and Sensor Manager on Android and Apple HealthKit on IOS.
+A plugin to make building fitness apps just that easier, using Android Health Connect and Sensor Manager on Android and Apple HealthKit on IOS.
 
 ## Install
 
