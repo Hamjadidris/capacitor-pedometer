@@ -46,6 +46,8 @@ class StepSensor : ComponentActivity(), SensorEventListener {
 
     private var sensor: Sensor? = null
 
+    private var steps:Long = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
@@ -165,8 +167,9 @@ class StepSensor : ComponentActivity(), SensorEventListener {
     }
 
 
-    override fun onResume() {
+     override fun onResume() {
         super.onResume()
+        steps = 0
         sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_FASTEST)
     }
 
@@ -174,9 +177,7 @@ class StepSensor : ComponentActivity(), SensorEventListener {
 
         sensorEvent?.let { event ->
             if (event.sensor.type == Sensor.TYPE_STEP_DETECTOR) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    writeStepsData(1, null, null)
-                }
+                steps++
             }
         }
     }
@@ -186,14 +187,21 @@ class StepSensor : ComponentActivity(), SensorEventListener {
     }
 
     override fun onPause() {
+        CoroutineScope(Dispatchers.IO).launch {
+            writeStepsData(steps, null, null)
+        }
         super.onPause()
         sensorManager.unregisterListener(this)
     }
 
     override fun onDestroy() {
+        CoroutineScope(Dispatchers.IO).launch {
+            writeStepsData(steps, null, null)
+        }
         super.onDestroy()
         sensorManager.unregisterListener(this)
     }
+
 
     private suspend fun writeStepsData(steps: Long, startTimestamp: Long?, endTimestamp: Long?) {
         if (steps <= 0) return
