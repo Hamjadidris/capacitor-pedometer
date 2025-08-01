@@ -52,14 +52,6 @@ class StepSensor : ComponentActivity(), SensorEventListener {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
 
-        // Check and request permission for Activity Recognition (Android 10+)
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            return activityResult(
-                RESULT_CANCELED,
-                "Activity recognition not available on this device"
-            )
-        }
-
         // define sensor and sensor manager
         sensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
 
@@ -75,6 +67,12 @@ class StepSensor : ComponentActivity(), SensorEventListener {
         }
 
         if (checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED) {
+            registerStepSensor()
+            return
+        }
+
+        // Check and request permission for Activity Recognition (Android 10+)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             registerStepSensor()
             return
         }
@@ -167,7 +165,7 @@ class StepSensor : ComponentActivity(), SensorEventListener {
     }
 
 
-     override fun onResume() {
+    override fun onResume() {
         super.onResume()
         steps = 0
         sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_FASTEST)
@@ -201,7 +199,6 @@ class StepSensor : ComponentActivity(), SensorEventListener {
         super.onDestroy()
         sensorManager.unregisterListener(this)
     }
-
 
     private suspend fun writeStepsData(steps: Long, startTimestamp: Long?, endTimestamp: Long?) {
         if (steps <= 0) return
