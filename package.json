@@ -1,6 +1,6 @@
 {
   "name": "@hamjad/capacitor-pedometer",
-  "version": "0.1.0",
+  "version": "0.0.2",
   "description": "A plugin to make building fitness apps just that easier, using Android Health Connect and Sensor Manager on Android and Apple HealthKit on IOS",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
